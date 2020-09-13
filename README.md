@@ -4,11 +4,10 @@
 
 Deep Learning Models for Face Detection/Recognition/Alignments, implemented in Tensorflow.
 
-It is being implemented...
 
 ## Main Contributers
 
-@ildoonet [@kimdwkimdw](https://github.com/kimdwkimdw) [@hahahahannie](https://github.com/hahahahannie) [@jaehobang](https://github.com/jaehobang)
+[@ildoonet](https://github.com/ildoonet) [@kimdwkimdw](https://github.com/kimdwkimdw) [@hahahahannie](https://github.com/hahahahannie) [@jaehobang](https://github.com/jaehobang)
 
 ## Models
 
@@ -40,14 +39,16 @@ A baseline model use dlib face detection module to crop rois. Then they will be 
 
 ### Requirements
 
-- tensorflow >= 1.8.0
-- opencv >= 3.4.1
+```bash
+$ pip install -r requirements.txt
+```
 
 ### Install & Download Models
 
 ```bash
-$ pip install -r requirements.txt
 $ cd detectors/dlib
+$ bash download.sh
+$ cd ../ssd
 $ bash download.sh
 $ cd ../../recognizers/vggface/
 $ bash download.sh
@@ -60,14 +61,9 @@ $ bash download.sh
 ### Test on samples
 
 ```bash
-$ python bin/run_example.py run --source_path=./samples/faces --db_path=./sample_db.pkl --img_path=./samples/blackpink/blackpink1.jpg --method=vgg2
+$ python bin/face.py
 ```
 
-### Test on a image
-
-```bash
-$ python bin/face.py run --visualize=true --image=./samples/blackpink/blackpink1.jpg
-```
 
 ## Reference
 

@@ -19,22 +19,22 @@ class FaceDetectorSSD(FaceDetector):
         self.specific_model = specific_model
         graph_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
-            DeepFaceConfs.get()['detector'][self.specific_model]['frozen_graph']
+            DeepFaceConfs.get()['detector'][self.specific_model]['frozen_graph']            # Pesos congelados del modelo
         )
-        self.detector = self._load_graph(graph_path)
+        self.detector = self._load_graph(graph_path)                                        # Cargar Tensorflow graph
 
-        self.tensor_image = self.detector.get_tensor_by_name('prefix/image_tensor:0')
-        self.tensor_boxes = self.detector.get_tensor_by_name('prefix/detection_boxes:0')
-        self.tensor_score = self.detector.get_tensor_by_name('prefix/detection_scores:0')
-        self.tensor_class = self.detector.get_tensor_by_name('prefix/detection_classes:0')
+        self.tensor_image = self.detector.get_tensor_by_name('prefix/image_tensor:0')       # Tensor referente a imagen
+        self.tensor_boxes = self.detector.get_tensor_by_name('prefix/detection_boxes:0')    # Tensor de bounding boxes
+        self.tensor_score = self.detector.get_tensor_by_name('prefix/detection_scores:0')   # Tensor de scores
+        self.tensor_class = self.detector.get_tensor_by_name('prefix/detection_classes:0')  # Tensor de clases detectadas
 
         predictor_path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             DeepFaceConfs.get()['detector']['dlib']['landmark_detector']
         )
-        self.predictor = dlib.shape_predictor(predictor_path)
+        self.predictor = dlib.shape_predictor(predictor_path)                               # Inicializar predictor de landmarks
 
-        config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+        config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))               # Uso eficiente gpu
         self.session = tf.Session(graph=self.detector, config=config)
 
     def _load_graph(self, graph_path):
@@ -55,17 +55,9 @@ class FaceDetectorSSD(FaceDetector):
         return 'detector_%s' % self.specific_model
 
     def detect(self, npimg, resize=(480, 640)):
-        """
 
-        :param npimg:
-        :param resize: False or tuple
-        :return:
-        """
         height, width = npimg.shape[:2]
-        if not resize:
-            infer_img = npimg
-        else:
-            infer_img = cv2.resize(npimg, resize, cv2.INTER_AREA)   # TODO : Resize or not?
+        infer_img = cv2.resize(npimg, resize, cv2.INTER_AREA) 
 
         dets, scores, classes = self.session.run([self.tensor_boxes, self.tensor_score, self.tensor_class], feed_dict={
             self.tensor_image: [infer_img]
@@ -74,10 +66,11 @@ class FaceDetectorSSD(FaceDetector):
 
         faces = []
         for det, score in zip(dets, scores):
-            if score < DeepFaceConfs.get()['detector'][self.specific_model]['score_th']:
+            if score < DeepFaceConfs.get()['detector'][self.specific_model]['score_th']: # th = 0.7 (deepface/config/basic.yml) 
                 continue
 
-            y = int(max(det[0], 0) * height)
+            # Coordenadas del rostro
+            y = int(max(det[0], 0) * height)                                             
             x = int(max(det[1], 0) * width)
             h = int((det[2] - det[0]) * height)
             w = int((det[3] - det[1]) * width)
@@ -87,20 +80,19 @@ class FaceDetectorSSD(FaceDetector):
 
             bbox = BoundingBox(x, y, w, h, score)
 
-            # find landmark
+            # Calcular landmarks
             rect = dlib.rectangle(left=x, top=y, right=x + w, bottom=y + h)
             shape = self.predictor(npimg, rect)
             coords = np.zeros((68, 2), dtype=np.int)
 
-            # loop over the 68 facial landmarks and convert them
-            # to a 2-tuple of (x, y)-coordinates
+            # Iterar sobre los 68 landmarks del rostro y convertirlos en duplas (x, y)
             for i in range(0, 68):
                 coords[i] = (shape.part(i).x, shape.part(i).y)
             bbox.face_landmark = coords
 
             faces.append(bbox)
 
-        faces = sorted(faces, key=lambda x: x.score, reverse=True)
+        faces = sorted(faces, key=lambda x: x.score, reverse=True)                       # Orderar por score 
 
         return faces
 

@@ -31,6 +31,7 @@ def roundint(v):
 
 def tag_faces(faces, result, threshold):
     for face_idx, face in enumerate(faces):
+        print(result)
         face.face_feature = result['feature'][face_idx]
         name, score = result['name'][face_idx][0]
         if score < threshold:
@@ -51,7 +52,7 @@ def faces_to_rois(npimg, faces, roi_mode='recognizer_vgg'):
 
 def get_roi(img, face, roi_mode):
     """
-    :return: target_size 크기의 Cropped & Aligned Face Image
+    :return: Cropped & Aligned Face Image
     """
     rpy, node_point = landmark_to_pose(face.face_landmark, img.shape)
     roll = rpy[0]
@@ -59,16 +60,15 @@ def get_roi(img, face, roi_mode):
         roll = 0.0  # TODO ?
 
     height, width = img.shape[:2]
-
     new_w, new_h = (abs(math.sin(roll) * height) + abs(math.cos(roll) * width),
                     abs(math.sin(roll) * width) + abs(math.cos(roll) * height))
     new_w = roundint(new_w)
     new_h = roundint(new_h)
-    mat = cv2.getRotationMatrix2D((height / 2, width / 2), -1 * roll * 180.0 / math.pi, 1.0)
+    mat = cv2.getRotationMatrix2D((height / 2, width / 2), -1 * roll * 180.0 / math.pi, 1.0) 
     (tx, ty) = (roundint((new_w - width) / 2), roundint((new_h - height) / 2))
     mat[0, 2] += tx
     mat[1, 2] += ty
-    dst = cv2.warpAffine(img, mat, dsize=(new_w + tx * 2, new_h + ty * 2))
+    dst = cv2.warpAffine(img, mat, dsize=(new_w + tx * 2, new_h + ty * 2))                      
 
     aligned_points = []
     if face.face_landmark is not None:
